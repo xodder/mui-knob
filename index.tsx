@@ -1,7 +1,7 @@
 import { withStyles } from "@material-ui/core";
-import clsx from "clsx";
 import React from "react";
-import _throttle from "lodash/throttle";
+import clsx from "./utils/clsx";
+import _throttle from "./utils/throttle";
 
 const styles = () => ({
   root: ({ radius }) => ({

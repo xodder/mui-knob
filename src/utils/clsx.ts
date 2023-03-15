@@ -1,5 +1,3 @@
-import assert from 'assert';
-
 function clsx(...args: unknown[]): string {
   const classes: any[] = [];
 
@@ -21,7 +19,7 @@ function clsx(...args: unknown[]): string {
             classes.push(inner);
           }
         } else {
-          assert(arg);
+          if (!arg) throw new Error('expected arg but got nothing');
 
           Object.entries(arg).forEach(([key, value]) => {
             if (value) {
@@ -36,4 +34,3 @@ function clsx(...args: unknown[]): string {
 }
 
 export default clsx;
-

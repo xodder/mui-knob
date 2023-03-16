@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, emphasize, getLuminance } from '@mui/material';
 import React from 'react';
 import _throttle from './utils/throttle';
 
@@ -16,6 +16,9 @@ type KnobProps = {
   showLabels?: boolean;
   maxLabel?: string;
   minLabel?: string;
+  color?: string;
+  tint?: string;
+  glow?: string;
   disabled?: boolean;
 };
 
@@ -33,6 +36,9 @@ function Knob({
   showLabels,
   minLabel = 'Min',
   maxLabel = 'Max',
+  color = '#131313',
+  tint = '#a8d8f8',
+  glow,
   disabled,
 }: KnobProps) {
   const mountedRef = React.useRef(false);
@@ -65,18 +71,25 @@ function Knob({
     onChange?.(value);
   }
 
+  const boxShadow = isLight(color)
+    ? '0 0.2em 0.1em 0.05em rgba(0, 0, 0, 0.04) inset, 0 -0.2em 0.1em 0.05em rgba(0,0,0,0.2) inset, 0 0.5em 0.65em 0 rgba(255, 255, 255, 0.3)'
+    : '0 0.2em 0.1em 0.05em rgba(255, 255, 255, 0.1) inset, 0 -0.2em 0.1em 0.05em rgba(0, 0, 0, 0.5) inset, 0 0.5em 0.65em 0 rgba(0, 0, 0, 0.3)';
+
   return (
     <Box
       position="relative"
       width={radius * 2}
       height={radius * 2}
       borderRadius="50%"
-      border="solid 0.25em #0e0e0e"
-      boxShadow="0 0.2em 0.1em 0.05em rgba(255, 255, 255, 0.1) inset, 0 -0.2em 0.1em 0.05em rgba(0, 0, 0, 0.5) inset, 0 0.5em 0.65em 0 rgba(0, 0, 0, 0.3)"
+      // border={`solid 0.25em ${color}`}
+      bgcolor={color}
+      boxShadow={boxShadow}
       sx={{
         transition: 'opacity 125ms ease-in-out',
-        background:
-          '#181818 -webkit-gradient(linear, left bottom, left top, color-stop(0, #1d1d1d), color-stop(1, #131313))',
+        backgroundImage: `-webkit-gradient(linear, left bottom, left top, color-stop(0, ${emphasize(
+          color,
+          0.05
+        )}), color-stop(1, ${color}))`,
         opacity: disabled ? 0.6 : undefined,
       }}
     >
@@ -87,6 +100,8 @@ function Knob({
         startAngle={startAngle}
         endAngle={endAngle}
         stepAngle={stepAngle}
+        tint={tint}
+        glow={glow}
         disabled={disabled}
       />
       {showValue && (
@@ -113,6 +128,9 @@ function Knob({
               key={i}
               active={i < maxActiveTickIndex}
               angle={tickAngle}
+              color={color}
+              tint={tint}
+              glow={glow}
             />
           );
         })}
@@ -133,6 +151,8 @@ type KnobActuatorProps = {
   startAngle: number;
   endAngle: number;
   stepAngle: number;
+  tint?: string;
+  glow?: string;
   disabled?: boolean;
 };
 
@@ -143,6 +163,8 @@ function KnobActuator({
   startAngle,
   endAngle,
   stepAngle,
+  tint,
+  glow,
   disabled,
 }: KnobActuatorProps) {
   const knobRef = React.useRef<HTMLButtonElement | null>(null);
@@ -201,6 +223,8 @@ function KnobActuator({
     document.removeEventListener('mouseup', handleKnobMouseUp);
   }
 
+  const indicatorSize = Math.max(Math.min(radius * 0.1, 16), 4);
+
   return (
     <Box
       ref={knobRef}
@@ -225,11 +249,11 @@ function KnobActuator({
     >
       <Box
         position="absolute"
-        bgcolor="#a8d8f8"
-        boxShadow="0 0 0.4em 0 #79c3f4"
+        bgcolor={tint}
+        boxShadow={glow ? `0 0 0.4em 0 ${glow}` : undefined}
         borderRadius="50%"
-        width={Math.max(Math.min(radius * 0.1, 8), 4)}
-        height={Math.max(Math.min(radius * 0.1, 8), 4)}
+        width={indicatorSize}
+        height={indicatorSize}
         bottom={Math.max(Math.min(radius * 0.2, 12), 8)}
         left="50%"
         sx={{ transform: 'translateX(-50%)' }}
@@ -241,9 +265,16 @@ function KnobActuator({
 type KnobTickProps = {
   angle: number;
   active?: boolean;
+  color: string;
+  tint: string;
+  glow?: string;
 };
 
-function KnobTick({ angle, active }: KnobTickProps) {
+function KnobTick({ angle, active, color, tint, glow }: KnobTickProps) {
+  const inactiveBg = isLight(color)
+    ? 'rgba(0,0,0,0.2)'
+    : 'rgba(255,255,255,0.2)';
+
   return (
     <Box
       position="absolute"
@@ -261,10 +292,10 @@ function KnobTick({ angle, active }: KnobTickProps) {
           position: 'absolute',
           width: '0.07rem',
           height: '0.35em',
-          bgcolor: active ? '#a8d8f8' : 'rgba(255,255,255,0.2)',
+          bgcolor: active ? tint : inactiveBg,
           top: '-1em',
           left: '50%',
-          boxShadow: active ? '0 0 0.3em 0.08em #79c3f4' : undefined,
+          boxShadow: active && glow ? `0 0 0.3em 0.08em ${glow}` : undefined,
           transition: 'all 180ms ease-out',
         },
       }}
@@ -286,7 +317,7 @@ function KnobLabel({ value, angle, radius }: KnobLabelProps) {
       display="block"
       position="absolute"
       textTransform="uppercase"
-      fontSize={radius * 0.3}
+      fontSize={Math.min(radius * 0.3, 16)}
       bottom="calc(50% - 1.25rem)"
       left={`calc(50% - ${Math.round(value.length / 2)}ch)`}
       color="rgba(255, 255, 255, 0.5)"
@@ -351,6 +382,10 @@ function computeValueFromAngle(
   endAngle: number
 ) {
   return (angle - startAngle) / (endAngle - startAngle);
+}
+
+function isLight(color: string) {
+  return getLuminance(color) >= 0.5;
 }
 
 export default Knob;
